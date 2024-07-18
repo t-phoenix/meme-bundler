@@ -55,6 +55,13 @@ async function main(){
         console.log("FREYA BALANCE: ", Number(balance)/10**18)
     }
 
+    const dataStore = {
+        token: freya.target
+    }
+
+    const jsonFileName = "addresses.json";
+    fs.writeFileSync(jsonFileName, JSON.stringify(dataStore, null, 2));
+    console.log(`Token Address ${dataStore} stored. Saved to ${jsonFileName}`);
 
 
 
