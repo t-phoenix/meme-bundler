@@ -4,6 +4,21 @@ require('dotenv').config();
 
 /** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
+  etherscan: {
+    apiKey: {
+      sepolia: process.env.SEPOLIA_API_KEY
+    },
+    customChains:[
+      {
+        network: "sepolia",
+        chainId: 111555111,
+        urls: {
+          apiURL: "https://api-sepolia.etherscan.io/api",
+          browserURL: "https://etherscan.io/"
+        }
+      }
+    ]
+  },
   solidity: "0.8.24",
   defaultNetwork: 'hardhat',
   networks: {
@@ -11,10 +26,10 @@ module.exports = {
       //forking ETH MAINNET 
       forking: {
         enabled: true,
-        url: "https://eth-mainnet.g.alchemy.com/v2/I24pE_bTrYN23fPFw_CyYdxD0LNTq0fS",
-        chainId: 1,
-        accounts: [process.env.PRIVATE_KEY]
+        url: "https://eth-sepolia.g.alchemy.com/v2/I24pE_bTrYN23fPFw_CyYdxD0LNTq0fS",
+        
       },
+      accounts: [{privateKey: process.env.PRIVATE_KEY, balance: "10000000000000000000"}]
     },
     mainnet: {
       url: "https://eth-mainnet.g.alchemy.com/v2/I24pE_bTrYN23fPFw_CyYdxD0LNTq0fS",
@@ -23,6 +38,11 @@ module.exports = {
     goerli:{
       url: 'https://ethereum-goerli.publicnode.com',
       // accounts: [process.env.PRIVATE_KEY1, process.env.PRIVATE_KEY7, process.env.PRIVATE_KEY8 ]
+    },
+    sepolia:{
+      url: 'https://eth-sepolia.g.alchemy.com/v2/I24pE_bTrYN23fPFw_CyYdxD0LNTq0fS',
+      chainId: 11155111,
+      accounts: [process.env.PRIVATE_KEY]
     },
     polygon: {
       url: 'https://polygon-rpc.com',

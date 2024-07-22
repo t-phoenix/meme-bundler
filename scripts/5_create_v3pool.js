@@ -4,10 +4,18 @@ const UniswapFactoryABI = require('@uniswap/v3-core/artifacts/contracts/interfac
 const IUniswapV3PoolABI = require('@uniswap/v3-core/artifacts/contracts/interfaces/IUniswapV3Pool.sol/IUniswapV3Pool.json')
 
 const { uniswapAddresses, tokenAddresses } = require('../utils/constants');
-const { FeeAmount, computePoolAddress } = require('@uniswap/v3-sdk');
+const { FeeAmount } = require('@uniswap/v3-sdk');
 
 
 async function main(){
+    // GOAL: Create V3 Pool
+    // 1. Create Uniswap Factory
+    // 2. Get Meme Token Address from JSON file
+    // 3. CREATE FREYA Trading POOL
+    // 4. GET POOL ADDRESS FROM FACTORY and POOL DATA from Pool Contract
+    // 5. Save Pool Address in addresses.json
+
+
     // Tick: boundaries between discrete price ranges
     // 1 tick represents a price change of 0.01% from current price
     // tickSpacing: a contant that describes which ticks can be used by the pool. only ticks at indices that are divisible by it can be initialized.
@@ -19,6 +27,7 @@ async function main(){
     // Use Uniswap V3 Factory and use createPool(tokenA, tokenB, fee)
     // getPool (token0, token1, fee) ==> pool || token0 and token1 is interchangable
 
+    // GET UNISWAP FACTORY
     const UniswapV3FactoryContract = await hre.ethers.getContractAt(UniswapFactoryABI.abi, uniswapAddresses.uniswapV3FactoryAddress);
     const owner = await UniswapV3FactoryContract.owner();
     console.log("Uniswap Factory Owner: ", owner)
@@ -28,18 +37,20 @@ async function main(){
     const data = fs.readFileSync('./addresses.json', 'utf-8');
     const freyaAddress = JSON.parse(data).token;
     console.log("FREYA address: ",freyaAddress)
-    const createPool = await UniswapV3FactoryContract.createPool(freyaAddress, tokenAddresses.WETH_Address, FeeAmount.MEDIUM);
-    console.log("Creating MEME Pool FREYA/WETH at Fee: ", FeeAmount.MEDIUM);
 
-    // const freyaPoolAddress = computePoolAddress({
-    //     factoryAddress: uniswapAddresses.uniswapV3FactoryAddress,
-    //     tokenA: freyaAddress,
-    //     tokenB: tokenAddresses.WETH_Address,
-    //     fee: FeeAmount.MEDIUM
-    // })
-    const freyaPoolAddress = await UniswapV3FactoryContract.getPool(freyaAddress, tokenAddresses.WETH_Address, FeeAmount.MEDIUM)
+    // Create MEME TOKEN POOL 
+    const createPool = await UniswapV3FactoryContract.createPool(freyaAddress, tokenAddresses.USDC_Address, FeeAmount.MEDIUM);
+    console.log("Creating MEME Pool FREYA/USDC at Fee: ", FeeAmount.MEDIUM);
+     
+    await createPool.wait()
+
+    
+
+    // GET POOL ADDRESS
+    const freyaPoolAddress = await UniswapV3FactoryContract.getPool(freyaAddress, tokenAddresses.USDC_Address, FeeAmount.MEDIUM)
     console.log("FREYA Pool Contract:", freyaPoolAddress)
 
+    // GET POOL DATA
     const FreyaPoolContract = await hre.ethers.getContractAt(IUniswapV3PoolABI.abi, freyaPoolAddress);
     const [token0, token1, fee, liquidity, slot0] = await Promise.all([
         FreyaPoolContract.token0(),
@@ -50,7 +61,32 @@ async function main(){
     ])
 
     console.log("FREYA POOL INFO: token0:", token0, " token1: ", token1, "Fee: ", fee, " liquidity: ", liquidity);
-    console.log("Slot0 data: ", slot0)
+    console.log("Slot0 data: ", slot0);
+    // slot[0]: sqrtPriceX96
+    // slot[1]: tick
+
+    //verify contract
+    // const verifyGeneralIndex = await run("verify:verify", {
+    //     address: freyaPoolAddress,
+    //     constructorArguments: [
+          
+    //     ]
+    //   })
+    
+
+    // Adding pool address to json Data file
+    const dataStore = {
+        pool: freyaPoolAddress
+    }
+    let jsonFileData = JSON.parse(data)
+    const newData = {...jsonFileData, ...dataStore}
+
+    const jsonFileName = "addresses.json";
+    fs.writeFileSync(jsonFileName, JSON.stringify(newData, null, 2));
+    console.log(`Token Address ${dataStore} stored. Saved to ${jsonFileName}`);
+
+    
+
 
 }
 
