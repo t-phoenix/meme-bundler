@@ -8,12 +8,12 @@ const {FeeAmount, Route, Pool, SwapQuoter, Trade, SwapRouter, computePoolAddress
 const {CurrencyAmount, TradeType, Percent} = require('@uniswap/sdk-core')
 const JSBI = require('jsbi')
 
-const { USDC_TOKEN, WETH_TOKEN, uniswapAddresses, tokenAddresses, MAX_FEE_PER_GAS, MAX_PRIORITY_FEE_PER_GAS, WBTC_TOKEN } = require('../utils/constants');
+const { USDC_TOKEN, WETH_TOKEN, uniswapAddresses, tokenAddresses, MAX_FEE_PER_GAS, MAX_PRIORITY_FEE_PER_GAS, WBTC_TOKEN, FREYA_TOKEN } = require('../utils/constants');
 const { getNativeBalance } = require('../utils/getBalances');
 const IUniswapV3PoolABI = require('@uniswap/v3-core/artifacts/contracts/interfaces/IUniswapV3Pool.sol/IUniswapV3Pool.json');
 const { ERC20_ABI, WETH_ABI } = require('../utils/ABI');
 const UniswapV3Router2ABI = require('../utils/UniswapV3Router2ABI.json');
-const { getPriceFromSqrt, sqrtPriceX96ToPrice, priceToSqrtPriceX96 } = require('../utils/helper');
+const { getPriceFromSqrt, sqrtPriceX96ToPrice, priceToSqrtPriceX96, getAccounts, printBalances } = require('../utils/helper');
 const { SwapType, SwapOptionsSwapRouter02 } = require('@uniswap/smart-order-router');
 
 async function main(){
@@ -30,28 +30,26 @@ async function main(){
 
 
     
-    let accounts=[]
-    accounts = await hre.ethers.getSigners();
-
-    // accounts[0] = await ethers.getImpersonatedSigner("0x887C3599c4826F7b3cDe82003b894430F27d5b92");
-    // accounts[1] = await ethers.getImpersonatedSigner("0x4838B106FCe9647Bdf1E7877BF73cE8B0BAD5f97");
-
-    console.log(accounts[0].address)
-    console.log("Account 0 ETH: ", Number(await getNativeBalance(accounts[0].address))/10**18)
+    const accounts = await getAccounts();
+    for (let index = 0; index < accounts.length; index++) {
+        await printBalances(accounts[index].address)
+    }
+    
 
 
-    // INPUT: AMOUNT
-    const inputAmount = 10000000;
+    // INPUT: AMOUNT  
+    const inputAmount = hre.ethers.parseUnits('10', 6); // USDC
+    console.log("INPUT AMOUNT(USDC) : ", inputAmount)
 
     // Creating Token Contract instance
     // INPUT: SWAP TOKEN
     const USDC_Contract = new hre.ethers.Contract(tokenAddresses.USDC_Address, ERC20_ABI, hre.ethers.provider)
-    // const WETH_Contract = new hre.ethers.Contract(tokenAddresses.WETH_Address, WETH_ABI, hre.ethers.provider)
-    const WBTC_Contract = new hre.ethers.Contract(tokenAddresses.WBTC_Address, ERC20_ABI, hre.ethers.provider);
+    const FREYA_Contract = new hre.ethers.Contract(tokenAddresses.FREYA_Address, ERC20_ABI, hre.ethers.provider)
+    //const WBTC_Contract = new hre.ethers.Contract(tokenAddresses.WBTC_Address, ERC20_ABI, hre.ethers.provider);
 
 
 
-    console.log("Account 0 USDC: ", Number(await USDC_Contract.balanceOf(accounts[0].address))/10**6)
+    // console.log("Account 0 USDC: ", Number(await FREYA_Contract.balanceOf(accounts[0].address))/10**18)
 
     // Creating Pool Address (USDC/WETH)
     // INPUT: FEE
@@ -63,26 +61,19 @@ async function main(){
     // })
     // console.log("Computed WETH/USDC Pool Address: ", wethusdcPoolAddress)
 
-    // const wbtcwethPoolAddress= computePoolAddress({
+
+    // const wbtcusdcPoolAddress = computePoolAddress({
     //     factoryAddress: uniswapAddresses.uniswapV3FactoryAddress,
     //     tokenA: WBTC_TOKEN,
-    //     tokenB: WETH_TOKEN,
+    //     tokenB: USDC_TOKEN,
     //     fee: FeeAmount.MEDIUM
     // })
-    // console.log("Computed WBTC/WETH Pool Address: ", wbtcwethPoolAddress)
-
-    const wbtcusdcPoolAddress = computePoolAddress({
-        factoryAddress: uniswapAddresses.uniswapV3FactoryAddress,
-        tokenA: WBTC_TOKEN,
-        tokenB: USDC_TOKEN,
-        fee: FeeAmount.MEDIUM
-    })
-    console.log("Computed WBTC/USDC Pool Address: ", wbtcusdcPoolAddress)
+    // console.log("Computed WBTC/USDC Pool Address: ", wbtcusdcPoolAddress)
 
 
     
     // Create Pool Instance
-    const poolContract = await hre.ethers.getContractAt(IUniswapV3PoolABI.abi, wbtcusdcPoolAddress);
+    const poolContract = await hre.ethers.getContractAt(IUniswapV3PoolABI.abi, uniswapAddresses.freyaUsdcPoolAddress);
 
     // Retrieve Pool Data
     const [token0, token1, fee, liquidity, slot0] = await Promise.all([
@@ -96,8 +87,7 @@ async function main(){
     console.log("Slot0 data: ", slot0);
 
     console.log("SqrtPriceX96: ", String(slot0[0]), " tick: ", String(slot0[1]) )
-    const sqrtPrice = sqrtPriceX96ToPrice(slot0[0])
-    console.log("Price From Sqrt Again:" , sqrtPrice)
+
     // Construct Pool
     // @params: token in, token out, poolfee, sqrtPriceX96, liquidity, tick 
     // Check the types of params
@@ -120,22 +110,23 @@ async function main(){
 
     // )
 
-    const wBTCUSDCPool = new Pool(
-        WBTC_TOKEN,
+    const FREYAUSDCPool = new Pool(
+        FREYA_TOKEN,
         USDC_TOKEN,
         FeeAmount.MEDIUM,
         String(slot0[0]),
         String(liquidity),
         Number(slot0[1])
     )
-    console.log("WBTC USDC Pool:", wBTCUSDCPool)
+    // NOTE: Use Number for tick value
+    console.log("FREYA USDC Pool:", FREYAUSDCPool)
 
     // Contruct Route Object
     // Route @params: [pool], token.in, token.out
     const swapRoute = new Route(
-        [wBTCUSDCPool], 
-        WBTC_TOKEN, 
-        USDC_TOKEN
+        [FREYAUSDCPool],  
+        USDC_TOKEN,
+        FREYA_TOKEN
     )
     
 
@@ -144,7 +135,7 @@ async function main(){
     const {calldata} = await SwapQuoter.quoteCallParameters(
         swapRoute,
         CurrencyAmount.fromRawAmount(
-            WBTC_TOKEN,
+            USDC_TOKEN,
             Number(inputAmount),
         ),
         TradeType.EXACT_INPUT,
@@ -158,20 +149,20 @@ async function main(){
         data: calldata,
     })
     const decodedData = hre.ethers.AbiCoder.defaultAbiCoder().decode(['uint256'], quoteCallReturnData)
-    console.log("Quote Output for", Number(inputAmount)/10**8, " is", Number(decodedData[0])/10**6)
-    const sqrtPriceCalculated = priceToSqrtPriceX96(Number(decodedData[0])/10**6)
-    console.log("Price to Sqrt Price:", sqrtPriceCalculated)
+    console.log("Quote Output for", Number(inputAmount)/10**6, " is", Number(decodedData[0])/10**18)
+    // const sqrtPriceCalculated = priceToSqrtPriceX96(Number(decodedData[0])/10**6)
+    // console.log("Price to Sqrt Price:", sqrtPriceCalculated)
 
     // UNCHECKED TRADE
     // USE QUOTE OUTPUT AMOUNT HERE
     const uncheckedTrade = Trade.createUncheckedTrade({
         route: swapRoute,
         inputAmount: CurrencyAmount.fromRawAmount(
-            WBTC_TOKEN,
+            USDC_TOKEN,
             Number(inputAmount)
         ),
         outputAmount: CurrencyAmount.fromRawAmount(
-            USDC_TOKEN,
+            FREYA_TOKEN,
             Number(decodedData[0])
         ),
         tradeType: TradeType.EXACT_INPUT
@@ -183,7 +174,7 @@ async function main(){
 
     // Approve Tokens
     // CHECK APPROVAL
-    await WBTC_Contract.connect(accounts[0]).approve(uniswapAddresses.swapRouter2Address, Number(inputAmount)*2)
+    await USDC_Contract.connect(accounts[1]).approve(uniswapAddresses.swapRouter2Address, Number(inputAmount)*2)
 
     // INPUT: SLIPPAGE CONFIG
     // Swap Options
@@ -191,9 +182,9 @@ async function main(){
     // JSBI version should be 3.2.5 for Percent to work as per docs
     const swapOptions = {
         type: SwapType.SWAP_ROUTER_02,
-        slippageTolerance: new Percent(1000, 10000), // 50 bips, or 0.50%
+        slippageTolerance: new Percent(100, 10000), // 50 bips, or 0.50%
         deadline: Math.floor(Date.now()/1000) + (60 * 20), // 20 minutes from current unix time
-        recipient: accounts[0].address
+        recipient: accounts[1].address
     }
 
     // Getting Swap data and value
@@ -217,11 +208,12 @@ async function main(){
     
 
     console.log("User Balance Before Trade")
-    console.log('USDC Balance: ', Number(await USDC_Contract.balanceOf(accounts[0].address))/10**6, 
-    ' WBTC Balance: ', Number(await WBTC_Contract.balanceOf(accounts[0].address))/10**8)
+    console.log('USDC Balance: ', Number(await USDC_Contract.balanceOf(accounts[1].address))/10**6, 
+    ' FREYA Balance: ', Number(await FREYA_Contract.balanceOf(accounts[1].address))/10**18)
 
     // WRITING TRANSACTION TO BLOCKCHAIN
-    const result = await accounts[0].sendTransaction(tx);
+    console.log("SENDING SWAP TRANSACTION ... ")
+    const result = await accounts[1].sendTransaction(tx);
     console.log("Swap Transaction: ", result)
     
     // ------------------------------------------------ //
@@ -245,8 +237,8 @@ async function main(){
     // const swap = await SwapRouterContract.exactInputSingle(params)
 
     console.log("User Balance After Trade")
-    console.log('USDC Balance: ', Number(await USDC_Contract.balanceOf(accounts[0].address))/10**6,
-    ' WBTC Balance: ', Number(await WBTC_Contract.balanceOf(accounts[0].address))/10**8)
+    console.log('USDC Balance: ', Number(await USDC_Contract.balanceOf(accounts[1].address))/10**6,
+    ' FREYA Balance: ', Number(await FREYA_Contract.balanceOf(accounts[1].address))/10**18)
 }
 
 main().catch((error)=>{

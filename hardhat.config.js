@@ -27,7 +27,7 @@ module.exports = {
       forking: {
         enabled: true,
         url: "https://eth-sepolia.g.alchemy.com/v2/I24pE_bTrYN23fPFw_CyYdxD0LNTq0fS",
-        
+        blockNumber: 6367763        
       },
       accounts: [{privateKey: process.env.PRIVATE_KEY, balance: "10000000000000000000"}]
     },
@@ -42,7 +42,7 @@ module.exports = {
     sepolia:{
       url: 'https://eth-sepolia.g.alchemy.com/v2/I24pE_bTrYN23fPFw_CyYdxD0LNTq0fS',
       chainId: 11155111,
-      accounts: [process.env.PRIVATE_KEY]
+      accounts: [process.env.PRIVATE_KEY, process.env.WALLET_1_KEY, process.env.WALLET_2_KEY]
     },
     polygon: {
       url: 'https://polygon-rpc.com',

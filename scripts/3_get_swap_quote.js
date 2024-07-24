@@ -3,7 +3,7 @@ const hre = require('hardhat');
 const { uniswapAddresses, USDC_TOKEN, WETH_TOKEN, tokenAddresses } = require('../utils/constants');
 
 const IUniswapV3PoolABI = require('@uniswap/v3-core/artifacts/contracts/interfaces/IUniswapV3Pool.sol/IUniswapV3Pool.json')
-const Quoter = require('@uniswap/v3-periphery/artifacts/contracts/lens/Quoter.sol/Quoter.json')
+const QuoterV2 = require('@uniswap/v3-periphery/artifacts/contracts/lens/QuoterV2.sol/QuoterV2.json')
 
 
 async function main(){
@@ -27,16 +27,17 @@ async function main(){
     // fee 500 == 0.05%
 
     // Compute WETH/USDC Pool Address
-    const wethusdcPoolAddress = computePoolAddress({
-        factoryAddress: uniswapAddresses.uniswapV3FactoryAddress,
-        tokenA: USDC_TOKEN,
-        tokenB: WETH_TOKEN,
-        fee: FeeAmount.MEDIUM
-    })
-    console.log("Computed Pool Address: ", wethusdcPoolAddress)
-    
+    // const wethusdcPoolAddress = computePoolAddress({
+    //     factoryAddress: uniswapAddresses.uniswapV3FactoryAddress,
+    //     tokenA: USDC_TOKEN,
+    //     tokenB: WETH_TOKEN,
+    //     fee: FeeAmount.MEDIUM
+    // })
+    // console.log("Computed Pool Address: ", wethusdcPoolAddress)
+    const inputAmount = hre.ethers.parseUnits('10', 6); // 1, 10, 100, 200 USDC
+
     // Create Pool Instance
-    const poolContract = await hre.ethers.getContractAt(IUniswapV3PoolABI.abi, wethusdcPoolAddress);
+    const poolContract = await hre.ethers.getContractAt(IUniswapV3PoolABI.abi, uniswapAddresses.freyaUsdcPoolAddress);
 
     // Retrieve Pool Data
     const [token0, token1, fee, liquidity, slot0] = await Promise.all([
@@ -46,7 +47,7 @@ async function main(){
         poolContract.liquidity(),
         poolContract.slot0(),
     ])
-    console.log("Pool Data: ", token0, token1, fee, Number(liquidity)/10**18, slot0)
+    console.log("Pool Data: ", token0, token1, fee, Number(liquidity), slot0)
     // liquidity - the amount of liquidity the pool can use for trades at the current price.
     // slot0 returns 
     // sqrtPriceX96
@@ -59,18 +60,21 @@ async function main(){
 
 
     // Create Quoter Contract Instance
-    const quoterContract = new hre.ethers.Contract(uniswapAddresses.quoterAddress, Quoter.abi, hre.ethers.provider)
+    const quoterV2Contract = new hre.ethers.Contract(uniswapAddresses.quoterV2Address, QuoterV2.abi, hre.ethers.provider)
 
+    // quoteExactInputSingle
+    // quoteExactInputSingle
     // Simulate Swap with quoteExactInputSingle
     // Static Call simulates the Write Function
-    const quotedAmoutOut = await quoterContract.quoteExactInputSingle.staticCall(
-        tokenAddresses.USDC_Address,
-        tokenAddresses.WETH_Address,
-        FeeAmount.MEDIUM,
-        10000_000000, // Decimal 6 for USDC
-        0
-    )
-    console.log("Checking for 10,000 USDC: ", Number(quotedAmoutOut)/10**18)
+    // DOUBLE CHECK ABI FOR QUOTER OR V2
+    const quotedAmoutOut = await quoterV2Contract.quoteExactInputSingle.staticCall({
+        tokenIn: tokenAddresses.USDC_Address,
+        tokenOut: tokenAddresses.FREYA_Address,
+        amountIn: inputAmount,
+        fee: FeeAmount.MEDIUM,
+        sqrtPriceLimitX96:0
+    })
+    console.log("Checking for", Number(inputAmount)/10**6 ,"USDC: ", Number(quotedAmoutOut)/10**18)
 }
 
 

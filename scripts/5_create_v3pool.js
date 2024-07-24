@@ -35,11 +35,11 @@ async function main(){
 
     // Meme Token Address
     const data = fs.readFileSync('./addresses.json', 'utf-8');
-    const freyaAddress = JSON.parse(data).token;
-    console.log("FREYA address: ",freyaAddress)
+    // const freyaAddress = JSON.parse(data).token;
+    // console.log("FREYA address: ",freyaAddress)
 
     // Create MEME TOKEN POOL 
-    const createPool = await UniswapV3FactoryContract.createPool(freyaAddress, tokenAddresses.USDC_Address, FeeAmount.MEDIUM);
+    const createPool = await UniswapV3FactoryContract.createPool(tokenAddresses.FREYA_Address, tokenAddresses.USDC_Address, FeeAmount.MEDIUM);
     console.log("Creating MEME Pool FREYA/USDC at Fee: ", FeeAmount.MEDIUM);
      
     await createPool.wait()
@@ -47,7 +47,7 @@ async function main(){
     
 
     // GET POOL ADDRESS
-    const freyaPoolAddress = await UniswapV3FactoryContract.getPool(freyaAddress, tokenAddresses.USDC_Address, FeeAmount.MEDIUM)
+    const freyaPoolAddress = await UniswapV3FactoryContract.getPool(tokenAddresses.FREYA_Address, tokenAddresses.USDC_Address, FeeAmount.MEDIUM)
     console.log("FREYA Pool Contract:", freyaPoolAddress)
 
     // GET POOL DATA
@@ -64,14 +64,6 @@ async function main(){
     console.log("Slot0 data: ", slot0);
     // slot[0]: sqrtPriceX96
     // slot[1]: tick
-
-    //verify contract
-    // const verifyGeneralIndex = await run("verify:verify", {
-    //     address: freyaPoolAddress,
-    //     constructorArguments: [
-          
-    //     ]
-    //   })
     
 
     // Adding pool address to json Data file
@@ -83,7 +75,7 @@ async function main(){
 
     const jsonFileName = "addresses.json";
     fs.writeFileSync(jsonFileName, JSON.stringify(newData, null, 2));
-    console.log(`Token Address ${dataStore} stored. Saved to ${jsonFileName}`);
+    console.log(`Token Address ${newData} stored. Saved to ${jsonFileName}`);
 
     
 

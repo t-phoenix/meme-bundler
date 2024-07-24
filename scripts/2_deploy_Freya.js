@@ -48,7 +48,7 @@ async function main(){
     // DEPLOY TOKEN CONTRACT
     const freya = await hre.ethers.deployContract("FreyaMemeCoin", [walletsAddress, mintAmount], accounts[0]);
     console.log("FREYA TOKEN CONTRACT ADDRESS:" , freya.target)
-
+    await freya.wait()
     
     const totalFreyaSupply = await freya.totalSupply();
     const freyaOwner = await freya.owner();
