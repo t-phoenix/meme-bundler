@@ -2,13 +2,13 @@ const hre = require('hardhat');
 const fs = require('fs');
 const IUniswapV3PoolABI = require('@uniswap/v3-core/artifacts/contracts/interfaces/IUniswapV3Pool.sol/IUniswapV3Pool.json')
 
-const { getTokenApproval, getNativeBalance } = require('../utils/getBalances');
-const { uniswapAddresses, tokenAddresses, FREYA_TOKEN, USDC_TOKEN, MAX_FEE_PER_GAS, MAX_PRIORITY_FEE_PER_GAS } = require('../utils/constants');
-const { ERC20_ABI } = require('../utils/ABI');
+const { getTokenApproval, getNativeBalance } = require('../../utils/getBalances');
+const { uniswapAddresses, tokenAddresses, FREYA_TOKEN, USDC_TOKEN, MAX_FEE_PER_GAS, MAX_PRIORITY_FEE_PER_GAS } = require('../../utils/constants');
+const { ERC20_ABI } = require('../../utils/ABI');
 const { Wallet } = require('ethers');
 const { Pool, FeeAmount, encodeSqrtRatioX96,TickMath, Position, nearestUsableTick, NonfungiblePositionManager } = require('@uniswap/v3-sdk');
 
-const { priceToSqrtPriceX96, getTickFromPrice, getPriceFromTick, printBalances } = require('../utils/helper');
+const { priceToSqrtPriceX96, getTickFromPrice, getPriceFromTick, printBalances } = require('../../utils/helper');
 const { Percent } = require('@uniswap/sdk-core');
 
 

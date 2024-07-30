@@ -1,8 +1,9 @@
 const hre = require('hardhat');
 const IUniswapV3PoolABI = require('@uniswap/v3-core/artifacts/contracts/interfaces/IUniswapV3Pool.sol/IUniswapV3Pool.json');
 const INONFUNGIBLE_POSITION_MANAGER = require('@uniswap/v3-periphery/artifacts/contracts/NonfungiblePositionManager.sol/NonfungiblePositionManager.json')
-const { uniswapAddresses } = require('../utils/constants');
+const { uniswapAddresses, FREYA_TOKEN, USDC_TOKEN } = require('../utils/constants');
 const { getAccounts, printBalances } = require('../utils/helper');
+const { Position, Pool, FeeAmount } = require('@uniswap/v3-sdk');
 
 
 async function main(){
@@ -34,19 +35,15 @@ async function main(){
     for (let index = 0; index < numOfPositions; index++) {
         calls.push(await nfpmContract.tokenOfOwnerByIndex(accounts[0].address, index));
     }
+    console.log("NFT Ids: ", calls)
 
-    const positionIds = await Promise.all(calls);
-    console.log("Position Ids: ", positionIds);
 
     const positionCalls =[]
     
-    for (let id of positionIds) {
+    for (let id of calls) {
         positionCalls.push(await nfpmContract.positions(id));
     }
-
-    const callResponses = await Promise.all(positionCalls);
-
-    console.log("Call Responses: ", callResponses)
+    console.log("Position Calls:", positionCalls)
     // @Return Result12)
     // nonce
     // operator
@@ -61,7 +58,30 @@ async function main(){
     // tokenOweb0,
     // tokenOwed1 
 
-    // const calculatedPrice = 
+    const pool = new Pool(
+        FREYA_TOKEN,
+        USDC_TOKEN,
+        FeeAmount.MEDIUM,
+        String(slot0[0]),
+        String(liquidity),
+        Number(slot0[1])
+    )
+
+    for (let index = 0; index < positionCalls.length; index++) {
+        const nftPosition = new Position({
+            pool: pool,
+            tickLower: Number(positionCalls[index][5]),
+            tickUpper: Number(positionCalls[index][6]),
+            liquidity: String(positionCalls[index][7]),
+            useFullPrecision: true
+        })
+
+        const amount0 = nftPosition.amount0.toSignificant(6);
+        const amount1 = nftPosition.amount1.toSignificant(6);
+        console.log("NFT Position: ", index+1, " Amount0(FREYA): ", amount0, " Amount1(USDC): ",amount1 )
+        
+    }
+    
 
 
 }

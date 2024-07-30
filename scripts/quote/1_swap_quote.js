@@ -16,7 +16,7 @@ async function main() {
     await printBalances(accounts[index].address);
   }
 
-  const inputAmountList = ['1', '10', '100', '1000', '10000', '100000', '400000','1000000'];
+  const inputAmountList = ['1', '10', '100', '1000', '10000', '100000', '400000','1000000']; // FREYA INPUT
   let outputAmountList =[];
 
   for (let index = 0; index < inputAmountList.length; index++) {
@@ -97,13 +97,10 @@ async function main() {
     console.log(
         "Quote Output for",
         Number(inputAmountList[index]),
-        " is",
+        "FREYA is",
         Number(outputAmountList[index]) / 10 ** 6
       );
-    
   }
-  
-
 }
 
 main().catch((error) => {
