@@ -1,3 +1,6 @@
+//CAUTION: MUST ADD TOKEN AND POOL ADDRESS MANUALLY IN utils/constants.js
+// USE LIQUIDITY SCRIPTS
+const fs = require('fs');
 const hre = require('hardhat');
 const { getAccounts, printBalances } = require('../utils/helper');
 const { ERC20_ABI } = require('../utils/ABI');
@@ -13,25 +16,35 @@ async function main(){
     //3. Calculate Position from our input tokens
     //4. Config and Execute minting transaction
 
-    const accounts = getAccounts()
-    for (let index = 0; index < accounts.length; index++) {
-        await printBalances(accounts[index].address)
-    }
+    // INPUTS
+    const freyaInput = hre.ethers.parseUnits('4000000', 'ether'); // 2000/1 or 0.0005
+    const usdcInput = hre.ethers.parseUnits('5', 6);
+
+    // PRICE RANGE (line 78-79)
+    // const sqrtPrice = encodeSqrtRatioX96(Number(usdcInput), Number(freyaInput));
+    // const tick = TickMath.getTickAtSqrtRatio(sqrtPrice);
+
+
+    const wallets = getAccounts()
+    
+    const account =  wallets[0];
+    await printBalances(account.address)
+
+
+    // GET POOL ADDRESS
+    const data = fs.readFileSync('./addresses.json', 'utf-8');
+    const freyaAddress = JSON.parse(data).token
+    const freyaUsdcPoolAddress = JSON.parse(data).pool;
 
      //CONTRACT INSTANCES
      const USDC_Contract = await hre.ethers.getContractAt(ERC20_ABI, tokenAddresses.USDC_Address)
-     const FREYA_Contract = await hre.ethers.getContractAt(ERC20_ABI, tokenAddresses.FREYA_Address);
-     const POOL_Contract = await hre.ethers.getContractAt(IUniswapV3PoolABI.abi, uniswapAddresses.freyaUsdcPoolAddress)
-
-     // INPUTS
-    const freyaInput = hre.ethers.parseUnits('400000', 'ether'); // 2000/1 or 0.0005
-    const usdcInput = hre.ethers.parseUnits('200', 6);
-    
+     const FREYA_Contract = await hre.ethers.getContractAt(ERC20_ABI, freyaAddress);
+     const POOL_Contract = await hre.ethers.getContractAt(IUniswapV3PoolABI.abi, freyaUsdcPoolAddress)
 
 
     // APPROVE TOKENS
-    await FREYA_Contract.connect(accounts[0]).approve(uniswapAddresses.nonFungiblePositionManagerAddress, freyaInput);
-    await USDC_Contract.connect(accounts[0]).approve(uniswapAddresses.nonFungiblePositionManagerAddress, usdcInput);
+    await FREYA_Contract.connect(account).approve(uniswapAddresses.nonFungiblePositionManagerAddress, freyaInput);
+    await USDC_Contract.connect(account).approve(uniswapAddresses.nonFungiblePositionManagerAddress, usdcInput);
 
     // FETCH POOL DATA
     const [tickSpacing, liquidity, slot0] = await Promise.all([
@@ -52,10 +65,12 @@ async function main(){
         Number(slot0[1])
     )
 
+
+    
     // CREATE POSITION FROM INPUT AMOUNTS
     const position  = Position.fromAmounts({
         pool: configuredPool,
-        tickLower: nearestUsableTick(configuredPool.tickCurrent, configuredPool.tickSpacing) - configuredPool.tickSpacing*2000,
+        tickLower: nearestUsableTick(configuredPool.tickCurrent, configuredPool.tickSpacing) ,
         tickUpper: nearestUsableTick(configuredPool.tickCurrent, configuredPool.tickSpacing) + configuredPool.tickSpacing*2000,
         amount0: Number(freyaInput),
         amount1: Number(usdcInput),
@@ -65,7 +80,7 @@ async function main(){
 
     // MINT OPTIONS OBJECT
     const mintoptions = {
-        recipient: accounts[0].address,
+        recipient: account.address,
         deadline: Math.floor(Date.now()/1000)+ 60*20,
         slippageTolerance: new Percent(50, 10_000)
     }
@@ -81,22 +96,22 @@ async function main(){
         data: calldata,
         to: uniswapAddresses.nonFungiblePositionManagerAddress,
         value: value,
-        from: accounts[0].address,
+        from: account.address,
         // maxFeePerGas: MAX_FEE_PER_GAS,
         // maxPriorityFeePerGas: MAX_PRIORITY_FEE_PER_GAS
     }
 
     console.log("MINTING POSITION IN POOOL....")
-    const txRes = await accounts[0].sendTransaction(transaction);
+    const txRes = await account.sendTransaction(transaction);
     await txRes.wait()
 
 
-    for (let index = 0; index < accounts.length; index++) {
-        await printBalances(accounts[index].address);    
+    for (let index = 0; index < wallets.length; index++) {
+        await printBalances(wallets[index].address);    
     }
 
-    console.log("Pool Address: ", uniswapAddresses.freyaUsdcPoolAddress)
-    console.log("Pool balance Freya: ", Number(await FREYA_Contract.balanceOf(uniswapAddresses.freyaUsdcPoolAddress))/10**18, "USDC: ", Number(await USDC_Contract.balanceOf(uniswapAddresses.freyaUsdcPoolAddress))/10**6)
+    console.log("Pool Address: ", freyaUsdcPoolAddress)
+    console.log("Pool balance Freya: ", Number(await FREYA_Contract.balanceOf(freyaUsdcPoolAddress))/10**18, "USDC: ", Number(await USDC_Contract.balanceOf(uniswapAddresses.freyaUsdcPoolAddress))/10**6)
 
 
 

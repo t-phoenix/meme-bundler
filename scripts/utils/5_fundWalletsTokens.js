@@ -5,6 +5,11 @@ const { ERC20_ABI } = require('../../utils/ABI');
 
 async function main(){
     
+
+    // INPUT TOKEN
+    const tokenAddress = tokenAddresses.USDC_Address;
+    const amount = 100_000000n;
+    const TOKEN_CONTRACT = new hre.ethers.Contract(tokenAddress, ERC20_ABI, hre.ethers.provider)
    
 
     // GET WALLETS FROM FILE
@@ -17,10 +22,7 @@ async function main(){
     }
     console.log("Addresses to mint Freya:", walletsAddress)
 
-    // INPUT TOKEN
-    const tokenAddress = tokenAddresses.USDC_Address;
-    const amount = 2000_000000n;
-    const TOKEN_CONTRACT = new hre.ethers.Contract(tokenAddress, ERC20_ABI, hre.ethers.provider)
+    
 
     // SIGNER ACCOUNT
     const accounts = await hre.ethers.getSigners();

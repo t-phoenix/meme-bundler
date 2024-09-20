@@ -38,6 +38,7 @@ async function main(){
             privateKey: newWallet.privateKey
         });
         walletsAddress.push(newWallet.address)
+        // await newWallet.wait();
     }
 
     // Save Wallets to json file

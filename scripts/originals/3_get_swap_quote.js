@@ -1,6 +1,7 @@
+//NOT WORKING
 const { computePoolAddress, FeeAmount } = require('@uniswap/v3-sdk');
 const hre = require('hardhat');
-const { uniswapAddresses, USDC_TOKEN, WETH_TOKEN, tokenAddresses } = require('../utils/constants');
+const { uniswapAddresses, USDC_TOKEN, WETH_TOKEN, tokenAddresses } = require('../../utils/constants');
 
 const IUniswapV3PoolABI = require('@uniswap/v3-core/artifacts/contracts/interfaces/IUniswapV3Pool.sol/IUniswapV3Pool.json')
 const QuoterV2 = require('@uniswap/v3-periphery/artifacts/contracts/lens/QuoterV2.sol/QuoterV2.json')

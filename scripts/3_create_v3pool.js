@@ -5,6 +5,8 @@ const IUniswapV3PoolABI = require('@uniswap/v3-core/artifacts/contracts/interfac
 
 const { uniswapAddresses, tokenAddresses } = require('../utils/constants');
 const { FeeAmount } = require('@uniswap/v3-sdk');
+const { getAccounts } = require('../utils/helper');
+const { ERC20_ABI } = require('../utils/ABI');
 
 
 async function main(){
@@ -27,6 +29,11 @@ async function main(){
     // Use Uniswap V3 Factory and use createPool(tokenA, tokenB, fee)
     // getPool (token0, token1, fee) ==> pool || token0 and token1 is interchangable
 
+
+    // GET WALLETS
+    const wallets = await getAccounts();
+
+
     // GET UNISWAP FACTORY
     const UniswapV3FactoryContract = await hre.ethers.getContractAt(UniswapFactoryABI.abi, uniswapAddresses.uniswapV3FactoryAddress);
     const owner = await UniswapV3FactoryContract.owner();
@@ -35,20 +42,25 @@ async function main(){
 
     // Meme Token Address
     const data = fs.readFileSync('./addresses.json', 'utf-8');
-    // const freyaAddress = JSON.parse(data).token;
+    const freyaAddress = JSON.parse(data).token;
+    //const freyaAddress = tokenAddresses.FREYA_Address
     // console.log("FREYA address: ",freyaAddress)
 
-    // Create MEME TOKEN POOL 
-    const createPool = await UniswapV3FactoryContract.createPool(tokenAddresses.FREYA_Address, tokenAddresses.USDC_Address, FeeAmount.MEDIUM);
-    console.log("Creating MEME Pool FREYA/USDC at Fee: ", FeeAmount.MEDIUM);
+    const USDC_Contract = new hre.ethers.Contract(tokenAddresses.USDC_Address, ERC20_ABI, hre.ethers.provider);
+    console.log("Account", wallets[0].address ,"USDC: ", Number(await USDC_Contract.balanceOf(wallets[0].address))/10**6)
+
+
+    // Create TOKEN POOL 
+    const createPool = await UniswapV3FactoryContract.createPool(freyaAddress, tokenAddresses.USDC_Address, FeeAmount.MEDIUM);
+    console.log("Creating Uniswap V3 Pool ERCTOKEN/USDC at Fee: ", FeeAmount.MEDIUM);
      
     await createPool.wait()
 
     
 
     // GET POOL ADDRESS
-    const freyaPoolAddress = await UniswapV3FactoryContract.getPool(tokenAddresses.FREYA_Address, tokenAddresses.USDC_Address, FeeAmount.MEDIUM)
-    console.log("FREYA Pool Contract:", freyaPoolAddress)
+    const freyaPoolAddress = await UniswapV3FactoryContract.getPool(freyaAddress, tokenAddresses.USDC_Address, FeeAmount.MEDIUM)
+    console.log("ERC TOKEN Pool Contract:", freyaPoolAddress)
 
     // GET POOL DATA
     const FreyaPoolContract = await hre.ethers.getContractAt(IUniswapV3PoolABI.abi, freyaPoolAddress);
@@ -60,7 +72,7 @@ async function main(){
         FreyaPoolContract.slot0(),
     ])
 
-    console.log("FREYA POOL INFO: token0:", token0, " token1: ", token1, "Fee: ", fee, " liquidity: ", liquidity);
+    console.log("ERC Token POOL INFO: token0:", token0, " token1: ", token1, "Fee: ", fee, " liquidity: ", liquidity);
     console.log("Slot0 data: ", slot0);
     // slot[0]: sqrtPriceX96
     // slot[1]: tick

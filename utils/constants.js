@@ -21,8 +21,9 @@ const uniswapAddresses = {
     quoterV2Address: '0xEd1f6473345F45b75F8179591dd5bA1888cf2FB3',
     swapRouter2Address: "0x3bFA4769FB09eefC5a80d6E87c3B9C650f7Ae48E",
     nonFungiblePositionManagerAddress: '0x1238536071E1c677A632429e3655c799b22cDA52',
-    oldfreyaUsdcPoolAddress: "0xeC24994f6e5B2DedB0B83653d03F69ED303A861a",
-    freyaUsdcPoolAddress: "0x6b871f83977600e1b1413c1994C550125bCdfF55",
+    freyaUsdcPoolAddress: "0x409270a27d6fC8DDb0C43E680BeA7586736D89F1",
+    // newfreyaUsdcPoolAddress: "0xa1D00f8bE9E4cA67c2Bc5976Ed1B75b0c6D27872",
+    // wbtcUsdcPoolAddress: "0x3faC21f2d59d890BA23b82028aB2B3dA8ae5A116"
 }
 // ETH MAINNET
 // const tokenAddresses = {
@@ -37,8 +38,8 @@ const tokenAddresses = {
     USDC_Address: "0x94a9D9AC8a22534E3FaCa9F4e7F2E2cf85d5E4C8",
     WETH_Address: "0xfFf9976782d46CC05630D1f6eBAb18b2324d6B14",
     WBTC_Address: "0x29f2D40B0605204364af54EC677bD022dA425d03",
-    OLD_FREYA_Address: "0x002A8904642d7208DDB656d8df4Df55189ba299D",
-    FREYA_Address: "0x2648981230D8Efb6217Ff194ef16844B1D1B7C5d",
+    FREYA_Address: "0x1C13e788f79a4976e35Bb76025b0aAb92eA8b769",
+    //FREYA_Address: "0xa1D00f8bE9E4cA67c2Bc5976Ed1B75b0c6D27872",
 }
 
 

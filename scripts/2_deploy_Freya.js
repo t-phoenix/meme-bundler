@@ -36,7 +36,7 @@ async function main(){
     }
     console.log("Addresses to mint Freya:", walletsAddress)
 
-    // TOTAL FREYA TO MINT AND DISTRIBUTE AMONG ADDRESSES RANDOMLY
+    // INPUT: TOTAL FREYA TO MINT AND DISTRIBUTE AMONG ADDRESSES RANDOMLY
     const input = readlineSync.question("How many FREYA to mint (total supply, e.g. 10 million) : ")
     const parsedInput = parseInt(input, 10);
 
@@ -46,19 +46,19 @@ async function main(){
 
     
     // DEPLOY TOKEN CONTRACT
-    const freya = await hre.ethers.deployContract("FreyaMemeCoin", [walletsAddress, mintAmount], accounts[0]);
-    console.log("FREYA TOKEN CONTRACT ADDRESS:" , freya.target)
-    await freya.wait()
+    const freya = await hre.ethers.deployContract("ERCToken", [walletsAddress, mintAmount], accounts[0]);
+    console.log("ERC TOKEN CONTRACT ADDRESS:" , freya.target)
+    await freya.waitForDeployment();
     
     const totalFreyaSupply = await freya.totalSupply();
     const freyaOwner = await freya.owner();
-    console.log("FREYA SUPPLY: ", totalFreyaSupply);
-    console.log("FREYA OWNER: ", freyaOwner)
+    console.log("ERC Token SUPPLY: ", totalFreyaSupply);
+    console.log("ERC Token Contract OWNER: ", freyaOwner)
 
     // Freya Balances of Wallets
     for (let index = 0; index < wallets.length; index++) {
         const balance = await freya.balanceOf(walletsAddress[index]);
-        console.log("FREYA BALANCE: ", Number(balance)/10**18)
+        console.log("ERC Token BALANCE: ", Number(balance)/10**18)
     }
 
 

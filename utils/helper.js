@@ -40,9 +40,10 @@ async function printBalances(address){
     //CONTRACT INSTANCES
     const USDC_Contract = await hre.ethers.getContractAt(ERC20_ABI, tokenAddresses.USDC_Address)
     const FREYA_Contract = await hre.ethers.getContractAt(ERC20_ABI, tokenAddresses.FREYA_Address);
-    console.log("Account: ", address);
-    console.log("ETH Balance: ", Number(await getNativeBalance(address))/10**18, "FREYA BALANCE: ", Number(await FREYA_Contract.balanceOf(address))/10**18, "USDC Balance: ", Number(await USDC_Contract.balanceOf(address))/10**6);
+    // console.log("Account: ", address);
+    console.log("Account: ", address, "ETH Balance: ", Number(await getNativeBalance(address))/10**18, "FREYA BALANCE: ", Number(await FREYA_Contract.balanceOf(address))/10**18, "USDC Balance: ", Number(await USDC_Contract.balanceOf(address))/10**6);
 }
+
 
 function getAccounts(){
     let wallets= []

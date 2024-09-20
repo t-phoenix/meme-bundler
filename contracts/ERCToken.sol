@@ -5,11 +5,11 @@ pragma solidity ^0.8.20;
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract FreyaMemeCoin is ERC20, Ownable {
+contract ERCToken is ERC20, Ownable {
     constructor(
         address[] memory _addresses,
         uint256[] memory _amounts
-    ) ERC20("Freya Meme Coin", "FREYA") Ownable(msg.sender) {
+    ) ERC20("Freakz", "FREECZ") Ownable(msg.sender) {
         require(
             _addresses.length == _amounts.length,
             "Addresses and amounts length mismatch"

@@ -1,3 +1,4 @@
+// LEGACY CODE: NOT WORKING
 const hre = require('hardhat');
 const fs = require('fs'); 
 // const UniswapV3RouterABI = require('../utils/UniswapV3RouterABI.json')
@@ -8,12 +9,12 @@ const {FeeAmount, Route, Pool, SwapQuoter, Trade, SwapRouter, computePoolAddress
 const {CurrencyAmount, TradeType, Percent} = require('@uniswap/sdk-core')
 const JSBI = require('jsbi')
 
-const { USDC_TOKEN, WETH_TOKEN, uniswapAddresses, tokenAddresses, MAX_FEE_PER_GAS, MAX_PRIORITY_FEE_PER_GAS, WBTC_TOKEN, FREYA_TOKEN } = require('../utils/constants');
-const { getNativeBalance } = require('../utils/getBalances');
+const { USDC_TOKEN, WETH_TOKEN, uniswapAddresses, tokenAddresses, MAX_FEE_PER_GAS, MAX_PRIORITY_FEE_PER_GAS, WBTC_TOKEN, FREYA_TOKEN } = require('../../utils/constants');
+const { getNativeBalance } = require('../../utils/getBalances');
 const IUniswapV3PoolABI = require('@uniswap/v3-core/artifacts/contracts/interfaces/IUniswapV3Pool.sol/IUniswapV3Pool.json');
-const { ERC20_ABI, WETH_ABI } = require('../utils/ABI');
-const UniswapV3Router2ABI = require('../utils/UniswapV3Router2ABI.json');
-const { getPriceFromSqrt, sqrtPriceX96ToPrice, priceToSqrtPriceX96, getAccounts, printBalances } = require('../utils/helper');
+const { ERC20_ABI, WETH_ABI } = require('../../utils/ABI');
+const UniswapV3Router2ABI = require('../../utils/UniswapV3Router2ABI.json');
+const { getPriceFromSqrt, sqrtPriceX96ToPrice, priceToSqrtPriceX96, getAccounts, printBalances } = require('../../utils/helper');
 const { SwapType, SwapOptionsSwapRouter02 } = require('@uniswap/smart-order-router');
 
 async function main(){
@@ -28,24 +29,34 @@ async function main(){
     // 8. CREATE TRXN
     // 9. SEND TRXN
 
+     // FOR MAINNET - use this line
+     const accounts = await hre.ethers.getSigners();
+     const signingAccount = accounts[0]
+    
+     // FOR FORKED IMPERSONATE - use this line
+     // accounts[0] = await ethers.getImpersonatedSigner("0x4838B106FCe9647Bdf1E7877BF73cE8B0BAD5f97");
+    //   await printBalances(accounts1[0].address)
 
     
-    const accounts = await getAccounts();
-    for (let index = 0; index < accounts.length; index++) {
-        await printBalances(accounts[index].address)
-    }
+    const wallets = await getAccounts();
+    // for (let index = 0; index < wallets.length; index++) {
+    //     await printBalances(wallets[index].address)
+    // }
+    const swappingWallet =  wallets[0];
+    await printBalances(swappingWallet.address);
     
 
 
     // INPUT: AMOUNT  
-    const inputAmount = hre.ethers.parseUnits('10', 6); // USDC
-    console.log("INPUT AMOUNT(USDC) : ", inputAmount)
+    const inputAmount = hre.ethers.parseUnits('5', 6); // USDC
+    //const inputAmount = hre.ethers.parseUnits('0.5',8); // WBTC
+    console.log("INPUT AMOUNT(WBTC) : ", inputAmount)
 
     // Creating Token Contract instance
     // INPUT: SWAP TOKEN
     const USDC_Contract = new hre.ethers.Contract(tokenAddresses.USDC_Address, ERC20_ABI, hre.ethers.provider)
     const FREYA_Contract = new hre.ethers.Contract(tokenAddresses.FREYA_Address, ERC20_ABI, hre.ethers.provider)
-    //const WBTC_Contract = new hre.ethers.Contract(tokenAddresses.WBTC_Address, ERC20_ABI, hre.ethers.provider);
+    // const WBTC_Contract = new hre.ethers.Contract(tokenAddresses.WBTC_Address, ERC20_ABI, hre.ethers.provider);
 
 
 
@@ -60,15 +71,6 @@ async function main(){
     //     fee: FeeAmount.MEDIUM
     // })
     // console.log("Computed WETH/USDC Pool Address: ", wethusdcPoolAddress)
-
-
-    // const wbtcusdcPoolAddress = computePoolAddress({
-    //     factoryAddress: uniswapAddresses.uniswapV3FactoryAddress,
-    //     tokenA: WBTC_TOKEN,
-    //     tokenB: USDC_TOKEN,
-    //     fee: FeeAmount.MEDIUM
-    // })
-    // console.log("Computed WBTC/USDC Pool Address: ", wbtcusdcPoolAddress)
 
 
     
@@ -98,16 +100,6 @@ async function main(){
     //     String(slot0[0]),
     //     String(liquidity),
     //     Number(slot0[1])
-    // )
-
-    // const wBTCwETHPool = new Pool(
-    //     WBTC_TOKEN,
-    //     WETH_TOKEN,
-    //     FeeAmount.MEDIUM,
-    //     String(slot0[0]),
-    //     String(liquidity),
-    //     Number(slot0[1])
-
     // )
 
     const FREYAUSDCPool = new Pool(
@@ -143,7 +135,7 @@ async function main(){
             useQuoterV2: true,
         }
     )
-    console.log("Quote CallData: ", calldata)
+    // console.log("Quote CallData: ", calldata)
     const quoteCallReturnData = await hre.ethers.provider.call({
         to: uniswapAddresses.quoterV2Address,
         data: calldata,
@@ -174,7 +166,7 @@ async function main(){
 
     // Approve Tokens
     // CHECK APPROVAL
-    await USDC_Contract.connect(accounts[1]).approve(uniswapAddresses.swapRouter2Address, Number(inputAmount)*2)
+    await USDC_Contract.connect(swappingWallet).approve(uniswapAddresses.swapRouter2Address, Number(inputAmount)*2)
 
     // INPUT: SLIPPAGE CONFIG
     // Swap Options
@@ -184,7 +176,7 @@ async function main(){
         type: SwapType.SWAP_ROUTER_02,
         slippageTolerance: new Percent(100, 10000), // 50 bips, or 0.50%
         deadline: Math.floor(Date.now()/1000) + (60 * 20), // 20 minutes from current unix time
-        recipient: accounts[1].address
+        recipient: wallets[1].address
     }
 
     // Getting Swap data and value
@@ -199,7 +191,7 @@ async function main(){
     //Creating Transaction Object
     const tx = {
         data: methodParameters.calldata,
-        from: accounts[0].address,
+        from: swappingWallet.address,
         to: uniswapAddresses.swapRouter2Address,
         value: methodParameters.value,
     }
@@ -208,12 +200,13 @@ async function main(){
     
 
     console.log("User Balance Before Trade")
-    console.log('USDC Balance: ', Number(await USDC_Contract.balanceOf(accounts[1].address))/10**6, 
-    ' FREYA Balance: ', Number(await FREYA_Contract.balanceOf(accounts[1].address))/10**18)
+    console.log('USDC Balance: ', Number(await USDC_Contract.balanceOf(swappingWallet.address))/10**6, 
+    ' FREYA Balance: ', Number(await FREYA_Contract.balanceOf(swappingWallet.address))/10**18)
 
     // WRITING TRANSACTION TO BLOCKCHAIN
     console.log("SENDING SWAP TRANSACTION ... ")
-    const result = await accounts[1].sendTransaction(tx);
+    const result = await swappingWallet.sendTransaction(tx);
+    await result.wait();
     console.log("Swap Transaction: ", result)
     
     // ------------------------------------------------ //
@@ -237,8 +230,8 @@ async function main(){
     // const swap = await SwapRouterContract.exactInputSingle(params)
 
     console.log("User Balance After Trade")
-    console.log('USDC Balance: ', Number(await USDC_Contract.balanceOf(accounts[1].address))/10**6,
-    ' FREYA Balance: ', Number(await FREYA_Contract.balanceOf(accounts[1].address))/10**18)
+    console.log('USDC Balance: ', Number(await USDC_Contract.balanceOf(swappingWallet.address))/10**6,
+    ' FREYA Balance: ', Number(await FREYA_Contract.balanceOf(swappingWallet.address))/10**18)
 }
 
 main().catch((error)=>{

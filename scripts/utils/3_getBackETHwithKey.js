@@ -1,12 +1,27 @@
 const hre = require('hardhat');
 const { getNativeBalance } = require('../../utils/getBalances');
+const readlineSync = require('readline-sync');
+
+
+// const privateKey = "0xa2481a0f296e389573a83f74f3cca5798b6c361d5428dce67c4341207f825dfb"
+// const beneficiaryWallet =  "0x2F15F9c7C7100698E10A48E3EA22b582FA4fB859";
 
 async function main(){
 
-    const privateKey = "0xa2481a0f296e389573a83f74f3cca5798b6c361d5428dce67c4341207f825dfb"
-    const beneficiaryWallet =  "0x2F15F9c7C7100698E10A48E3EA22b582FA4fB859";
+    
+
+    // GET KEY OF WALLET TO DRAIN
+    // INPUT: STRING VALUE
+    const privateKey = readlineSync.question("Enter the KEY of wallet to drain: ");
+    console.log(`WALLET KEY (to darin): ${privateKey}`);
+
+    // GET BENEFIACARY ACCOUNT
+    const beneficiaryWallet = readlineSync.question("Enter Beneficiary public account address: ");
+    console.log(`BENEFIACIARY WALLET: ${beneficiaryWallet}`);
 
     const wallet = new hre.ethers.Wallet(privateKey, hre.ethers.provider);
+
+    
 
     console.log("Wallet Address:" , wallet.address)
 
@@ -26,7 +41,7 @@ async function main(){
     const gasFee = gasPrice * gasLimit
     console.log("Gas Fee: ", gasFee)
 
-    const inputAmount = String(Number(balance) - Number(gasFee));
+    const inputAmount = String(Number(balance) - (1.2*Number(gasFee)));
     console.log("Input Amount: ", inputAmount)
 
 

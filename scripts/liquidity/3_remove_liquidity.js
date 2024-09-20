@@ -1,8 +1,10 @@
 const hre = require('hardhat');
+const readlineSync = require('readline-sync');
 const { getAccounts, printBalances } = require('../../utils/helper');
 const { uniswapAddresses, FREYA_TOKEN, USDC_TOKEN, tokenAddresses } = require('../../utils/constants');
 const IUniswapV3PoolABI = require('@uniswap/v3-core/artifacts/contracts/interfaces/IUniswapV3Pool.sol/IUniswapV3Pool.json');
-const INONFUNGIBLE_POSITION_MANAGER = require('@uniswap/v3-periphery/artifacts/contracts/NonfungiblePositionManager.sol/NonfungiblePositionManager.json');
+const UniswapNonFungiblePositionManagerABI = require('../../utils/UniswapNonFungiblePositionManager.json');
+
 const { Position, Pool, FeeAmount, nearestUsableTick, NonfungiblePositionManager } = require('@uniswap/v3-sdk');
 const { Percent, CurrencyAmount } = require('@uniswap/sdk-core');
 const { ERC20_ABI } = require('../../utils/ABI');
@@ -11,22 +13,37 @@ const { ERC20_ABI } = require('../../utils/ABI');
 async function main(){
 
     // NFT ID INPUT
-    const nftId = 18358;
+    // const nftId = 18358;
     // INPUTS
-    const freyaInput = hre.ethers.parseUnits('500000', 'ether'); // 2000/1 or 0.0005
-    const usdcInput = hre.ethers.parseUnits('300', 6);
+
+
+    const wallets = getAccounts()
+    const account = wallets[0];
+    await printBalances(account.address)
     
 
+    // NFT Manager Contract
+    const nfpmContract = await hre.ethers.getContractAt(UniswapNonFungiblePositionManagerABI, uniswapAddresses.nonFungiblePositionManagerAddress );
 
-    const accounts = getAccounts()
-    for (let index = 0; index < accounts.length; index++) {
-        await printBalances(accounts[index].address)
+    // USER NFT BALANCE
+    const userBalance = await nfpmContract.balanceOf(account.address);
+    console.log("Uniswap NFT Balance: ", userBalance);
+
+    // NFT IDS
+    for (let index = 0; index < userBalance; index++) {
+        const token = await nfpmContract.tokenOfOwnerByIndex(account.address, index);
+        console.log("Token", index, ": ", token);
     }
+
+    // NFT ID INPUT
+    // const nftId = 21193;
+    // INPUT: NUMBER OF WALLETS
+    const input = readlineSync.question("Enter NFT Id you want to remove liquidity:")
+    const nftId = parseInt(input, 10);
 
     const USDC_Contract = await hre.ethers.getContractAt(ERC20_ABI, tokenAddresses.USDC_Address)
     const FREYA_Contract = await hre.ethers.getContractAt(ERC20_ABI, tokenAddresses.FREYA_Address);
     const POOL_Contract = await hre.ethers.getContractAt(IUniswapV3PoolABI.abi, uniswapAddresses.freyaUsdcPoolAddress)
-    const nfpmContract = new hre.ethers.Contract(uniswapAddresses.nonFungiblePositionManagerAddress, INONFUNGIBLE_POSITION_MANAGER.abi, hre.ethers.provider );
 
 
     // FETCH POOL DATA
@@ -50,7 +67,7 @@ async function main(){
 
     // GET POSITION
     const nftPosition = await nfpmContract.positions(nftId);
-    console.log("NFT Position for id: ", nftId, " is ", nftPosition)
+    // console.log("NFT Position for id: ", nftId, " is ", nftPosition)
     // @Return Result12)
     // nonce, operator, token0,, token1,
     // fee, tickLower, tickUpper, liquidity
@@ -69,18 +86,23 @@ async function main(){
 
     // console.log("Position: ", position);
     console.log("Amount0: ", amount0, " Amount1: ", amount1)
+
+    const removeInput = readlineSync.question("Enter Liquidity % you want to remove (e.g. 60):")
+    const percentage = parseInt(removeInput, 10);
+    const removeLiquidityPercentage = new Percent(percentage, 100)
     
     // FOR COLLECTING FEE
     const collectOptions = {
+        tokenId: nftId,
         expectedCurrencyOwed0: CurrencyAmount.fromRawAmount(
             FREYA_TOKEN,
-            0
+            Number(nftPosition.tokensOwed0)
         ),
         expectedCurrencyOwed1: CurrencyAmount.fromRawAmount(
             USDC_TOKEN,
-            0
+            Number(nftPosition.tokensOwed1)
         ),
-        recipient: accounts[0].address
+        recipient: account.address
     }
 
 
@@ -88,7 +110,7 @@ async function main(){
         deadline: Math.floor(Date.now()/1000) + 60*20,
         slippageTolerance: new Percent(50, 10_000), // 50 bips
         tokenId: nftId,
-        liquidityPercentage: new Percent(50, 100), // remove 50% liquidity
+        liquidityPercentage: removeLiquidityPercentage, // remove 60% liquidity
         collectOptions: collectOptions
     }
 
@@ -102,16 +124,13 @@ async function main(){
         data: calldata,
         to: uniswapAddresses.nonFungiblePositionManagerAddress,
         value: value,
-        from: accounts[0].address
+        from: account.address
     }
-    // APPROVE TOKENS
-    // const approveFreya = await FREYA_Contract.connect(accounts[0]).approve(uniswapAddresses.nonFungiblePositionManagerAddress, freyaInput);
-    // const approveUSDC = await USDC_Contract.connect(accounts[0]).approve(uniswapAddresses.nonFungiblePositionManagerAddress, usdcInput);
-    // await approveUSDC.wait()
+    
 
     console.log("Reducing Liquidity... from Position Id: ", nftId)
-    const txRes = await accounts[0].sendTransaction(transaction)
-
+    const txRes = await account.sendTransaction(transaction)
+    await txRes.wait()
 
     const newPosition = await nfpmContract.positions(nftId);
     // console.log("Position Calls:", newPosition)
@@ -127,9 +146,8 @@ async function main(){
     const amount1Liquidity = afterPosition.amount1.toSignificant(6);
     console.log("Amount0: ", amount0Liquidity, "Amount1: ", amount1Liquidity)
 
-    for (let index = 0; index < accounts.length; index++) {
-        await printBalances(accounts[index].address)
-    }
+    await printBalances(account.address)
+    
 
 
 }
