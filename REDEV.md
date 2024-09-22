@@ -41,6 +41,13 @@ slot0 returns
 - feeProtocol
 - unlocked
 
+## Volume Bot
+Bot need to be configured to run at max 1% of total liquidty in Pool
+
+## Equations
+1. MarketCap = Token Supply x Token Price
+2. Token Price =  $ AMT in LP / Token Amount in LP
+
 
 
 

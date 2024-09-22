@@ -22,6 +22,7 @@ const uniswapAddresses = {
     swapRouter2Address: "0x3bFA4769FB09eefC5a80d6E87c3B9C650f7Ae48E",
     nonFungiblePositionManagerAddress: '0x1238536071E1c677A632429e3655c799b22cDA52',
     freyaUsdcPoolAddress: "0x409270a27d6fC8DDb0C43E680BeA7586736D89F1",
+    freyaWETHPoolAddress: "0x06a20CBabD6e5D84c6A8Aa4C59A8E0Aa22842fD7"
     // newfreyaUsdcPoolAddress: "0xa1D00f8bE9E4cA67c2Bc5976Ed1B75b0c6D27872",
     // wbtcUsdcPoolAddress: "0x3faC21f2d59d890BA23b82028aB2B3dA8ae5A116"
 }

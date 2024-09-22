@@ -44,6 +44,14 @@ async function printBalances(address){
     console.log("Account: ", address, "ETH Balance: ", Number(await getNativeBalance(address))/10**18, "FREYA BALANCE: ", Number(await FREYA_Contract.balanceOf(address))/10**18, "USDC Balance: ", Number(await USDC_Contract.balanceOf(address))/10**6);
 }
 
+async function printBalancesETH(address){
+    //CONTRACT INSTANCES
+    const WETH_Contract = await hre.ethers.getContractAt(ERC20_ABI, tokenAddresses.WETH_Address)
+    const FREYA_Contract = await hre.ethers.getContractAt(ERC20_ABI, tokenAddresses.FREYA_Address);
+    // console.log("Account: ", address);
+    console.log("Account: ", address, "ETH Balance: ", Number(await getNativeBalance(address))/10**18, "FREYA BALANCE: ", Number(await FREYA_Contract.balanceOf(address))/10**18, "WETH Balance: ", Number(await WETH_Contract.balanceOf(address))/10**18);
+}
+
 
 function getAccounts(){
     let wallets= []
@@ -106,5 +114,6 @@ function getAccounts(){
 module.exports = {
     divideNumberRandomly,
     printBalances,
+    printBalancesETH,
     getAccounts
 }
